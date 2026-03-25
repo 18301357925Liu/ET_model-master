@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>ET_model Web 接口示例</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #020617;
+      color: #e5e7eb;
+    }
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 40;
+      background: rgba(15, 23, 42, 0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid #1f2937;
+    }
+    .top-bar-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 16px 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .layout {
+      max-width: 1080px;
+      margin: 0 auto;
+      /* 给固定顶部导航留出空间，避免卡片被遮挡 */
+      padding: 230px 16px 40px;
+    }
+    h1 {
+      font-size: 30px;
+      font-weight: 700;
+      margin: 0 0 6px;
+      color: #f9fafb;
+    }
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 4px 6px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid #1f2937;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.9);
+      margin-top: 8px;
+      margin-bottom: 18px;
+      column-gap: 16px;
+      row-gap: 4px;
+    }
+    .nav-item {
+      padding: 8px 18px;
+      font-size: 13px;
+      border-radius: 999px;
+      cursor: pointer;
+      color: #9ca3af;
+      border: none;
+      background: transparent;
+      transition: background 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+      white-space: nowrap;
+    }
+    .nav-item:hover {
+      color: #e5e7eb;
+    }
+    .nav-item.active {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #f9fafb;
+      box-shadow: 0 12px 30px rgba(37, 99, 235, 0.65);
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #9ca3af;
+      margin-bottom: 24px;
+    }
+    .card {
+      background: #1e293b;
+      border-radius: 12px;
+      border: 1px solid #0f172a;
+      padding: 20px 20px 18px;
+      margin-bottom: 12px;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
+    }
+    .card h2 {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0 0 12px;
+      color: #e5e7eb;
+    }
+    .card-desc {
+      font-size: 14px;
+      color: #9ca3af;
+      margin-bottom: 20px;
+    }
+    label {
+      font-size: 14px;
+      color: #d1d5db;
+      display: block;
+      margin-bottom: 8px;
+    }
+    input[type="text"] {
+      width: 100%;
+      height: 40px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 14px;
+      outline: none;
+    }
+    input[type="text"]::placeholder {
+      color: #64748b;
+    }
+    input[type="text"]:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.45);
+    }
+    .hint {
+      margin-top: 4px;
+      font-size: 12px;
+      color: #6b7280;
+    }
+    button {
+      margin-top: 12px;
+      padding: 0 20px;
+      height: 44px;
+      border-radius: 8px;
+      border: none;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #f9fafb;
+      font-size: 13px;
+      cursor: pointer;
+      transition: transform 0.05s ease, box-shadow 0.05s ease, filter 0.05s ease;
+      box-shadow: 0 12px 30px rgba(37, 99, 235, 0.5);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    button:hover {
+      filter: brightness(1.08);
+      box-shadow: 0 14px 36px rgba(37, 99, 235, 0.7);
+      transform: translateY(-1px);
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .result, .table-container {
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px solid #1f2937;
+      font-size: 13px;
+    }
+    .status {
+      font-size: 13px;
+      color: #9ca3af;
+      margin-top: 6px;
+    }
+    .status.error {
+      color: #f87171;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+      font-size: 12px;
+    }
+    th, td {
+      padding: 6px 8px;
+      border-bottom: 1px solid #111827;
+      text-align: left;
+      white-space: nowrap;
+    }
+    th {
+      color: #9ca3af;
+      font-weight: 500;
+      background: #020617;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    td {
+      color: #e5e7eb;
+    }
+    .table-scroll {
+      max-height: 260px;
+      overflow: auto;
+      border-radius: 10px;
+      border: 1px solid #111827;
+      background: #020617;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .pill-low {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+    }
+    .pill-mid {
+      background: rgba(234, 179, 8, 0.15);
+      color: #facc15;
+    }
+    .pill-high {
+      background: rgba(248, 113, 113, 0.15);
+      color: #f97373;
+    }
+    .pill-unknown {
+      background: rgba(148, 163, 184, 0.2);
+      color: #e5e7eb;
+    }
+    .pill-cluster {
+      background: rgba(59, 130, 246, 0.2);
+      color: #bfdbfe;
+    }
+    .section-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+      font-size: 11px;
+      color: #9ca3af;
+      margin-left: 6px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: 14px;
+    }
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .form-row-main {
+      flex: 1 1 260px;
+    }
+    .form-row-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+    }
+    .form-row-actions-update {
+      flex-basis: 100%;
+      justify-content: flex-start;
+    }
+    .input-error {
+      font-size: 12px;
+      color: #f97373;
+      margin-top: 4px;
+    }
+    .status.success {
+      color: #4ade80;
+    }
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      box-shadow: none;
+    }
+    .btn-secondary:hover {
+      filter: none;
+      background: #020617;
+      box-shadow: 0 0 0 1px #334155;
+      transform: none;
+    }
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      padding: 0;
+    }
+    .btn-loading-spinner {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      border: 2px solid rgba(226, 232, 240, 0.35);
+      border-top-color: #e2e8f0;
+      animation: spin 0.7s linear infinite;
+    }
+    .btn-loading-text {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      min-width: 260px;
+      max-width: 360px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: #020617;
+      border: 1px solid #1f2937;
+      color: #e5e7eb;
+      font-size: 13px;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
+      display: none;
+      z-index: 60;
+    }
+    .toast.success {
+      border-color: rgba(34, 197, 94, 0.6);
+    }
+    .toast.error {
+      border-color: rgba(248, 113, 113, 0.7);
+    }
+    .toast-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .toast-close {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      border: none;
+      background: transparent;
+      color: #6b7280;
+      cursor: pointer;
+      padding: 0;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: none;
+    }
+    .toast-close:hover {
+      color: #e5e7eb;
+      box-shadow: none;
+      transform: none;
+      filter: none;
+    }
+    .help-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #9ca3af;
+    }
+    .help-inline-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 1px solid #334155;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: #9ca3af;
+      background: #020617;
+    }
+    .help-popover {
+      position: relative;
+      display: inline-block;
+    }
+    .help-popover-content {
+      position: absolute;
+      left: 0;
+      top: 125%;
+      min-width: 260px;
+      max-width: 360px;
+      padding: 10px 12px;
+      background: #020617;
+      border-radius: 8px;
+      border: 1px solid #1f2937;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
+      font-size: 12px;
+      color: #9ca3af;
+      line-height: 1.5;
+      display: none;
+      z-index: 30;
+    }
+    .help-popover:hover .help-popover-content {
+      display: block;
+    }
+    .table-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 16px;
+      margin-bottom: 6px;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+    .pagination {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .pagination button {
+      height: 28px;
+      padding: 0 10px;
+      font-size: 12px;
+      border-radius: 999px;
+    }
+    .sortable {
+      cursor: pointer;
+    }
+    .sortable::after {
+      content: "⇅";
+      font-size: 10px;
+      margin-left: 4px;
+      opacity: 0.6;
+    }
+    .chart-container {
+      margin-top: 14px;
+      border-radius: 10px;
+      border: 1px solid #111827;
+      background: #020617;
+      padding: 10px 12px 12px;
+    }
+    .chart-container canvas {
+      max-width: 100%;
+      height: 200px !important;
+    }
+    .chart-title {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-bottom: 6px;
+    }
+    canvas {
+      max-width: 100%;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @media (max-width: 860px) {
+      .grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .nav {
+        display: flex;
+        flex-wrap: wrap;
+        row-gap: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="top-bar-inner">
+      <div>
+        <h1>ET_model Web 演示</h1>
+        <div class="subtitle">
+          通过 HTTP 接口实现 README 中“预测新数据（离线单 session）”和“任务级负荷浏览”两条典型用法。
+        </div>
+      </div>
+      <div class="nav" id="topNav">
+        <button class="nav-item active" data-target="section-update">一键更新</button>
+        <button class="nav-item" data-target="section-predict">单 Session 预测</button>
+        <button class="nav-item" data-target="section-tasks">任务级浏览</button>
+        <button class="nav-item" data-target="section-realtime">实时监控</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div id="section-predict" style="display:none;">
+      <div class="card" id="card-predict">
+        <div class="section-title">
+          单 Session 预测
+          <span class="badge">README：预测新数据（离线单 session）</span>
+        </div>
+        <h2>预测单个 session 的任务级 cluster / 负荷</h2>
+        <div class="card-desc">
+          后端调用 <code>predict_utils.predict_session</code>，等价于命令行
+          <code>python predict_single_session.py ...</code>。
+        </div>
+
+        <label for="sessionDir">session 目录路径</label>
+        <div class="form-row">
+          <div class="form-row-main">
+            <input
+                id="sessionDir"
+                type="text"
+                placeholder="例如：data/20260124_140152"
+                style="width:100%; max-width:400px;"
+              />
+            <div id="sessionDirError" class="input-error" style="display:none;"></div>
+          </div>
+          <div class="form-row-actions form-row-actions-update">
+            <button id="btnPredict">
+              <span class="btn-loading-text">
+                <span>开始预测</span>
+              </span>
+            </button>
+          </div>
+        </div>
+        <div class="hint">
+          <span class="help-popover">
+            <span class="help-inline">
+              <span class="help-inline-icon">?</span>
+              目录内容要求（悬停查看）
+            </span>
+            <div class="help-popover-content">
+              目录需包含 README 中描述的 6 个 CSV + 1 个 JSON 文件；<br />
+              模型和 PCA 默认使用 <code>outputs_supervised_task/</code> 与 <code>outputs_task_cluster/</code>。
+            </div>
+          </span>
+        </div>
+        <div id="predictStatus" class="status"></div>
+
+        <div class="result" id="predictResult" style="display:none;">
+          <div style="font-size: 13px; color:#9ca3af; margin-bottom: 4px;">
+            预测结果（每行代表一个 task 样本）：
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Session</th>
+                  <th>Task</th>
+                  <th>Cluster</th>
+                  <th>相对负荷</th>
+                  <th>2D 坐标</th>
+                </tr>
+              </thead>
+              <tbody id="predictTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="section-update">
+      <div class="card" id="card-update">
+        <div class="section-title">
+          一键更新
+          <span class="badge">
+            <span style="margin-right:4px;">⚙️</span>
+            任务级聚类 + 负荷映射 + 监督训练
+          </span>
+        </div>
+        <h2>在网页中一键刷新任务级 pipeline</h2>
+        <div class="card-desc">
+          <span class="help-inline">
+            <span class="help-inline-icon">i</span>
+            相当于依次运行核心脚本并记录一条更新日志。
+          </span>
+        </div>
+
+        <div class="form-row" style="flex-direction:column; align-items:flex-start; gap:12px;">
+          <div class="form-row-main" style="width:100%; max-width:640px;">
+            <label for="dataRoot">数据根目录（data_root）</label>
+            <input
+              id="dataRoot"
+              type="text"
+              placeholder="默认：data"
+              style="width:100%; max-width:400px;"
+            />
+            <div class="hint">
+              若你的原始数据不在 <code>data/</code>，可以在此修改。
+            </div>
+            <div id="dataRootError" class="input-error" style="display:none;"></div>
+
+            <div class="form-row-actions" style="margin-top:8px; gap:10px;">
+              <button id="btnUpdatePipeline">
+                <span class="btn-loading-text">
+                  <span>一键更新任务级聚类 + 监督模型</span>
+                </span>
+              </button>
+              <button id="btnViewUpdateLog" class="btn-secondary">
+                查看更新日志
+              </button>
+            </div>
+          </div>
+          <div style="width:100%; margin-top:4px;">
+            <div id="updateStatus" class="status"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="section-tasks" style="display:none;">
+      <div class="card" id="card-tasks">
+        <div class="section-title">
+          任务级浏览
+          <span class="badge">README / WORKLOG：离线任务浏览面板</span>
+        </div>
+        <h2>浏览任务级 cluster 与相对负荷</h2>
+        <div class="card-desc">
+          后端读取 <code>outputs_task_cluster/clusters.csv</code> 和
+          <code>cluster_load_mapping.csv</code>，等价于 Tk 面板
+          <code>offline_task_dashboard.py</code> 的数据视图部分。
+        </div>
+
+        <label for="sessionFilter">按 Session 筛选（可选）</label>
+        <input
+          id="sessionFilter"
+          type="text"
+          placeholder="例如：20260124_140152，留空表示全部"
+        />
+
+        <button id="btnLoadTasks">
+          <span class="btn-loading-text">
+            <span>加载任务列表</span>
+          </span>
+        </button>
+        <div id="tasksStatus" class="status"></div>
+
+        <div class="table-container" id="tasksResult" style="display:none;">
+          <div style="font-size: 13px; color:#9ca3af; margin-bottom: 4px;">
+            来自 <code>outputs_task_cluster/</code> 的离线任务级结果：
+          </div>
+          <div class="table-actions">
+            <div>
+              <span id="tasksMetaText">共 0 条记录</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button id="btnExportTasks" class="btn-secondary" style="height:32px;padding:0 10px;font-size:12px;">
+                导出 CSV
+              </button>
+              <div class="pagination">
+                <button id="btnPrevPage" class="btn-secondary" disabled>上一页</button>
+                <span id="pageInfo">第 1 页</span>
+                <button id="btnNextPage" class="btn-secondary" disabled>下一页</button>
+              </div>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Session</th>
+                  <th class="sortable" data-sort-key="task_id">Task</th>
+                  <th>Cluster</th>
+                  <th class="sortable" data-sort-key="level">等级</th>
+                  <th>负荷标签</th>
+                </tr>
+              </thead>
+              <tbody id="tasksTableBody"></tbody>
+            </table>
+          </div>
+          <div class="chart-container">
+            <div class="chart-title">任务负荷分布</div>
+            <canvas id="tasksChart" height="160"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="section-realtime" style="display:none;">
+      <div class="card" id="card-realtime">
+        <div class="section-title">
+          实时监控
+          <span class="badge">实时 session 监控与认知负荷可视化</span>
+        </div>
+        <h2>实时监控采集数据并预测认知负荷</h2>
+        <div class="card-desc">
+          自动监控指定目录下的新 session，实时预测认知负荷等级并可视化展示。
+          等价于命令行运行 <code>realtime_session_monitor.py</code> + <code>cognitive_load_dashboard.py</code>。
+        </div>
+
+        <div class="form-row">
+          <div class="form-row-main">
+            <label for="realtimeWatchDirs">监控目录（每行一个，默认监控 Cognitive/data/cognitive_study 和 data）</label>
+            <textarea
+              id="realtimeWatchDirs"
+              style="width:100%; min-height:60px; padding:8px 10px; border-radius:8px; border:1px solid #334155; background:#020617; color:#e5e7eb; font-size:13px; font-family:monospace; resize:vertical;"
+              placeholder="Cognitive/data/cognitive_study&#10;data"
+            ></textarea>
+            <div class="hint">每行一个目录路径，留空使用默认值</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-row-main">
+            <label for="realtimeInterval">扫描间隔（秒）</label>
+            <input
+              id="realtimeInterval"
+              type="number"
+              value="10"
+              min="5"
+              max="300"
+              style="width:120px;"
+            />
+            <div class="hint">建议 10-30 秒，过短可能影响性能</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-row-actions">
+            <button id="btnStartRealtime">
+              <span class="btn-loading-text">
+                <span>启动监控</span>
+              </span>
+            </button>
+            <button id="btnStopRealtime" class="btn-secondary" disabled>
+              <span class="btn-loading-text">
+                <span>停止监控</span>
+              </span>
+            </button>
+            <button id="btnRefreshRealtime" class="btn-secondary">
+              <span class="btn-loading-text">
+                <span>刷新数据</span>
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div id="realtimeStatus" class="status"></div>
+
+        <div id="realtimeContent" style="display:none;">
+          <div class="chart-container" style="margin-top:20px;">
+            <div class="chart-title">实时认知负荷等级变化</div>
+            <canvas id="realtimeChart" height="200"></canvas>
+          </div>
+
+          <div class="table-container" style="margin-top:20px;">
+            <div style="font-size: 13px; color:#9ca3af; margin-bottom: 4px;">
+              最近预测结果（最多显示 50 条）：
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>时间</th>
+                    <th>Session</th>
+                    <th>Task</th>
+                    <th>Cluster</th>
+                    <th>负荷等级</th>
+                    <th>负荷标签</th>
+                    <th>2D 坐标</th>
+                  </tr>
+                </thead>
+                <tbody id="realtimeTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="globalToast" class="toast">
+    <div class="toast-title" id="toastTitle"></div>
+    <div id="toastMessage"></div>
+    <button class="toast-close" id="toastCloseBtn" aria-label="关闭">×</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    // 全局反馈与工具函数
+    function showToast(title, message, type = "success", timeout = 3000) {
+      const toast = document.getElementById("globalToast");
+      const titleEl = document.getElementById("toastTitle");
+      const msgEl = document.getElementById("toastMessage");
+      toast.classList.remove("success", "error");
+      toast.classList.add(type);
+      titleEl.textContent = title || "";
+      msgEl.textContent = message || "";
+      toast.style.display = "block";
+      if (timeout > 0) {
+        if (toast._timer) {
+          clearTimeout(toast._timer);
+        }
+        toast._timer = setTimeout(() => {
+          toast.style.display = "none";
+        }, timeout);
+      }
+    }
+
+    document.getElementById("toastCloseBtn").addEventListener("click", () => {
+      const toast = document.getElementById("globalToast");
+      toast.style.display = "none";
+    });
+
+    function setButtonLoading(btn, isLoading, loadingText) {
+      if (!btn) return;
+      const span = btn.querySelector(".btn-loading-text");
+
+      if (isLoading) {
+        // 记录原始按钮文字，便于之后恢复
+        if (!btn._originalLabel && span) {
+          const labelSpan = span.querySelector("span");
+          if (labelSpan) {
+            btn._originalLabel = labelSpan.textContent;
+          }
+        }
+
+        btn.disabled = true;
+        if (span) {
+          const labelSpan = span.querySelector("span");
+          if (labelSpan && loadingText) {
+            labelSpan.textContent = loadingText;
+          }
+          if (!span.querySelector(".btn-loading-spinner")) {
+            const spinner = document.createElement("span");
+            spinner.className = "btn-loading-spinner";
+            span.prepend(spinner);
+          }
+        }
+      } else {
+        btn.disabled = false;
+        if (span) {
+          const spinner = span.querySelector(".btn-loading-spinner");
+          if (spinner) spinner.remove();
+
+          // 恢复原始按钮文字
+          const labelSpan = span.querySelector("span");
+          if (labelSpan && btn._originalLabel) {
+            labelSpan.textContent = btn._originalLabel;
+          }
+        }
+      }
+    }
+
+    function validatePathInput(inputEl, errorEl, fieldLabel) {
+      if (!inputEl || !errorEl) return true;
+      const value = (inputEl.value || "").trim();
+      if (!value) {
+        errorEl.textContent = fieldLabel + "不能为空。";
+        errorEl.style.display = "block";
+        return false;
+      }
+      // 允许 Windows 绝对路径（如 D:\...），但需要先移除驱动器号后的冒号再检查
+      // 匹配 Windows 绝对路径格式：单个字母 + 冒号 + 反斜杠
+      const windowsPathPattern = /^[A-Za-z]:\\/;
+      let pathToCheck = value;
+      if (windowsPathPattern.test(value)) {
+        // 如果是 Windows 绝对路径，移除驱动器号部分（如 "D:\"）后再检查
+        pathToCheck = value.substring(3); // 移除 "D:\" 这样的前缀
+      }
+      // 检查剩余部分是否包含非法字符（<>:"|?*），但允许反斜杠和正斜杠
+      if (/[<>"|?*]/.test(pathToCheck)) {
+        errorEl.textContent = fieldLabel + "包含非法字符，请仅使用普通路径格式。";
+        errorEl.style.display = "block";
+        return false;
+      }
+      errorEl.textContent = "";
+      errorEl.style.display = "none";
+      return true;
+    }
+
+    const browseButtons = [];
+    browseButtons.forEach((id) => {
+      const btn = document.getElementById(id);
+      if (btn) {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          alert("当前浏览器无法直接浏览服务器目录，请在本机终端中确认路径后手动输入相对路径（如 data/...）。");
+        });
+      }
+    });
+
+    let allTaskRows = [];
+    let currentPage = 1;
+    const pageSize = 10;
+    let currentSort = { key: null, asc: true };
+
+    function renderTasksTable() {
+      const tbody = document.getElementById("tasksTableBody");
+      const pageInfo = document.getElementById("pageInfo");
+      const metaText = document.getElementById("tasksMetaText");
+      const btnPrev = document.getElementById("btnPrevPage");
+      const btnNext = document.getElementById("btnNextPage");
+      if (!tbody) return;
+
+      const total = allTaskRows.length;
+      const totalPages = Math.max(1, Math.ceil(total / pageSize));
+      if (currentPage > totalPages) currentPage = totalPages;
+
+      const start = (currentPage - 1) * pageSize;
+      const end = Math.min(start + pageSize, total);
+      const pageRows = allTaskRows.slice(start, end);
+
+      tbody.innerHTML = "";
+      for (const r of pageRows) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${r.session}</td>
+          <td>${r.task_id}</td>
+          <td>${clusterPill(r.cluster)}</td>
+          <td>${r.level}</td>
+          <td>${r.label}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      if (metaText) {
+        metaText.textContent = `共 ${total} 条记录，当前显示第 ${start + 1}-${end} 条`;
+      }
+      if (pageInfo) {
+        pageInfo.textContent = `第 ${currentPage} / ${totalPages} 页`;
+      }
+      if (btnPrev) btnPrev.disabled = currentPage <= 1;
+      if (btnNext) btnNext.disabled = currentPage >= totalPages;
+
+      renderTasksChart();
+    }
+
+    function renderTasksChart() {
+      const canvas = document.getElementById("tasksChart");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      const counts = {};
+      for (const r of allTaskRows) {
+        const key = String(r.level || "未知");
+        counts[key] = (counts[key] || 0) + 1;
+      }
+      const levels = Object.keys(counts).sort((a, b) => parseInt(a) - parseInt(b));
+      const values = levels.map((k) => counts[k]);
+
+      const width = canvas.width;
+      const height = canvas.height;
+      ctx.clearRect(0, 0, width, height);
+
+      if (!levels.length) return;
+
+      const maxValue = Math.max(...values);
+      const barWidth = Math.max(24, (width - 40) / levels.length - 8);
+      const baseY = height - 24;
+
+      ctx.font = "11px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillStyle = "#e5e7eb";
+
+      levels.forEach((level, idx) => {
+        const value = values[idx];
+        const ratio = maxValue === 0 ? 0 : value / maxValue;
+        const barHeight = Math.max(6, ratio * (height - 50));
+        const x = 24 + idx * (barWidth + 8);
+        const y = baseY - barHeight;
+
+        const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
+        gradient.addColorStop(0, "#6366f1");
+        gradient.addColorStop(1, "#8b5cf6");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x, y, barWidth, barHeight);
+
+        ctx.fillStyle = "#9ca3af";
+        ctx.textAlign = "center";
+        ctx.fillText(String(level), x + barWidth / 2, baseY + 12);
+        ctx.fillText(String(value), x + barWidth / 2, y - 4);
+      });
+    }
+
+    function sortTasks(key) {
+      if (!key) return;
+      if (currentSort.key === key) {
+        currentSort.asc = !currentSort.asc;
+      } else {
+        currentSort = { key, asc: true };
+      }
+      const dir = currentSort.asc ? 1 : -1;
+      allTaskRows.sort((a, b) => {
+        const va = a[key];
+        const vb = b[key];
+        const na = Number(va);
+        const nb = Number(vb);
+        if (!Number.isNaN(na) && !Number.isNaN(nb)) {
+          return (na - nb) * dir;
+        }
+        return String(va).localeCompare(String(vb)) * dir;
+      });
+      currentPage = 1;
+      renderTasksTable();
+    }
+    function levelPill(level, label) {
+      let cls = "pill-unknown";
+      const n = parseInt(level || "0", 10);
+      if (n <= 1) cls = "pill-low";
+      else if (n === 2 || n === 3) cls = "pill-mid";
+      else if (n >= 4) cls = "pill-high";
+      const text = level ? "L" + level + " · " + (label || "") : (label || "未知");
+      return '<span class="pill ' + cls + '">' + text + "</span>";
+    }
+
+    function clusterPill(c) {
+      return '<span class="pill pill-cluster">cluster ' + c + "</span>";
+    }
+
+    async function predictSession() {
+      const input = document.getElementById("sessionDir");
+      const status = document.getElementById("predictStatus");
+      const resultBox = document.getElementById("predictResult");
+      const tbody = document.getElementById("predictTableBody");
+      const btn = document.getElementById("btnPredict");
+      const errorEl = document.getElementById("sessionDirError");
+
+      const ok = validatePathInput(input, errorEl, "session 目录路径");
+      if (!ok) {
+        status.textContent = "";
+        status.classList.remove("error", "success");
+        return;
+      }
+
+      const sessionDir = (input.value || "").trim();
+
+      status.textContent = "正在调用 /api/predict-session ...";
+      status.classList.remove("error", "success");
+      setButtonLoading(btn, true, "正在预测...");
+      resultBox.style.display = "none";
+      tbody.innerHTML = "";
+
+      try {
+        const resp = await fetch("/api/predict-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_dir: sessionDir })
+        });
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          const msg = "预测失败：" + (data.error || resp.statusText);
+          status.textContent = msg;
+          status.classList.add("error");
+          showToast("单 Session 预测失败", msg, "error");
+          return;
+        }
+
+        const rows = data.results || [];
+        if (!rows.length) {
+          const msg = "调用成功，但未返回任何 task 级结果。";
+          status.textContent = msg;
+          status.classList.remove("error");
+          showToast("单 Session 预测完成", msg, "success");
+          return;
+        }
+
+        for (const r of rows) {
+          const tr = document.createElement("tr");
+          const coord = r.coordinates_2d || {};
+          tr.innerHTML = `
+            <td>${r.session_id || ""}</td>
+            <td>${r.task_id || ""}</td>
+            <td>${clusterPill(r.predicted_cluster)}</td>
+            <td>${levelPill(r.relative_load_level, r.relative_load_label)}</td>
+            <td>(${isNaN(coord.x) ? "NaN" : coord.x.toFixed(3)}, ${isNaN(coord.y) ? "NaN" : coord.y.toFixed(3)})</td>
+          `;
+          tbody.appendChild(tr);
+        }
+
+        resultBox.style.display = "block";
+        const msg = `预测成功，共 ${rows.length} 条 task 级结果。`;
+        status.textContent = msg;
+        status.classList.remove("error");
+        status.classList.add("success");
+        showToast("单 Session 预测成功", msg, "success");
+      } catch (err) {
+        console.error(err);
+        const msg = "请求异常：" + err;
+        status.textContent = msg;
+        status.classList.add("error");
+        showToast("单 Session 预测异常", msg, "error");
+      } finally {
+        setButtonLoading(btn, false);
+      }
+    }
+
+    async function loadTasks() {
+      const input = document.getElementById("sessionFilter");
+      const status = document.getElementById("tasksStatus");
+      const resultBox = document.getElementById("tasksResult");
+      const tbody = document.getElementById("tasksTableBody");
+      const btn = document.getElementById("btnLoadTasks");
+
+      const filter = (input.value || "").trim();
+
+      status.textContent = "正在读取 outputs_task_cluster 中的任务记录 ...";
+      status.classList.remove("error", "success");
+      setButtonLoading(btn, true, "正在加载...");
+      resultBox.style.display = "none";
+      tbody.innerHTML = "";
+
+      try {
+        const resp = await fetch("/api/task-records");
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          const msg = "加载失败：" + (data.error || resp.statusText);
+          status.textContent = msg;
+          status.classList.add("error");
+          showToast("任务级浏览加载失败", msg, "error");
+          return;
+        }
+
+        let rows = data.records || [];
+        if (filter) {
+          rows = rows.filter(r => (r.session || "").includes(filter));
+        }
+
+        allTaskRows = rows;
+        currentPage = 1;
+
+        if (!rows.length) {
+          const msg = filter
+            ? `没有找到包含 “${filter}” 的 Session 记录。`
+            : "没有读取到任何任务记录，请确认 outputs_task_cluster 目录已生成。";
+          status.textContent = msg;
+          status.classList.remove("error");
+          resultBox.style.display = "none";
+          showToast("任务级浏览无数据", msg, "success");
+          return;
+        }
+
+        renderTasksTable();
+        resultBox.style.display = "block";
+        const msg = `加载成功，共 ${rows.length} 条记录。`;
+        status.textContent = msg;
+        status.classList.remove("error");
+        status.classList.add("success");
+        showToast("任务级浏览加载成功", msg, "success");
+      } catch (err) {
+        console.error(err);
+        const msg = "请求异常：" + err;
+        status.textContent = msg;
+        status.classList.add("error");
+        showToast("任务级浏览请求异常", msg, "error");
+      } finally {
+        setButtonLoading(btn, false);
+      }
+    }
+
+    async function updatePipeline() {
+      const inputRoot = document.getElementById("dataRoot");
+      const status = document.getElementById("updateStatus");
+      const btn = document.getElementById("btnUpdatePipeline");
+      const errorEl = document.getElementById("dataRootError");
+
+      const hasValue = (inputRoot.value || "").trim().length > 0;
+      if (hasValue) {
+        const ok = validatePathInput(inputRoot, errorEl, "数据根目录");
+        if (!ok) {
+          status.textContent = "";
+          status.classList.remove("error", "success");
+          return;
+        }
+      } else {
+        errorEl.textContent = "";
+        errorEl.style.display = "none";
+      }
+
+      const dataRoot = (inputRoot.value || "").trim() || "data";
+
+      status.textContent = "正在一键更新任务级聚类 / 负荷映射 / 监督模型 ... 这可能需要几十秒。";
+      status.classList.remove("error", "success");
+      setButtonLoading(btn, true, "正在更新...");
+
+      try {
+        const resp = await fetch("/api/rebuild-task-pipeline", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ data_root: dataRoot })
+        });
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          const msg = "更新失败：" + (data.error || resp.statusText);
+          status.textContent = msg;
+          status.classList.add("error");
+          showToast("一键更新失败", msg, "error");
+        } else {
+          const steps = data.steps || [];
+          const ok = !steps.some(s => s && s.ok === false);
+          if (ok) {
+            const msg = "更新成功：已完成任务级聚类、负荷映射和监督模型训练。";
+            status.textContent = msg;
+            status.classList.remove("error");
+            status.classList.add("success");
+            showToast("一键更新成功", msg, "success");
+          } else {
+            const msg = "部分步骤失败，请查看更新日志详情。";
+            status.textContent = msg;
+            status.classList.add("error");
+            showToast("一键更新部分失败", msg, "error");
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        const msg = "请求异常：" + err;
+        status.textContent = msg;
+        status.classList.add("error");
+        showToast("一键更新请求异常", msg, "error");
+      } finally {
+        setButtonLoading(btn, false);
+      }
+    }
+
+    document.getElementById("btnPredict").addEventListener("click", predictSession);
+    document.getElementById("btnLoadTasks").addEventListener("click", loadTasks);
+    document.getElementById("btnUpdatePipeline").addEventListener("click", updatePipeline);
+
+    document.getElementById("btnPrevPage").addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage -= 1;
+        renderTasksTable();
+      }
+    });
+    document.getElementById("btnNextPage").addEventListener("click", () => {
+      const totalPages = Math.max(1, Math.ceil(allTaskRows.length / pageSize));
+      if (currentPage < totalPages) {
+        currentPage += 1;
+        renderTasksTable();
+      }
+    });
+
+    document.querySelectorAll('th.sortable').forEach((th) => {
+      th.addEventListener("click", () => {
+        const key = th.getAttribute("data-sort-key");
+        sortTasks(key);
+      });
+    });
+
+    document.getElementById("btnExportTasks").addEventListener("click", () => {
+      if (!allTaskRows.length) {
+        showToast("导出失败", "当前没有可导出的任务记录。", "error");
+        return;
+      }
+      const header = ["session", "task_id", "cluster", "level", "label"];
+      const lines = [header.join(",")];
+      allTaskRows.forEach(r => {
+        const row = [
+          r.session ?? "",
+          r.task_id ?? "",
+          r.cluster ?? "",
+          r.level ?? "",
+          r.label ?? ""
+        ].map(v => {
+          const s = String(v).replace(/"/g, '""');
+          return /[",\n]/.test(s) ? `"${s}"` : s;
+        });
+        lines.push(row.join(","));
+      });
+      const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "task_records.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("导出成功", "任务记录已导出为 task_records.csv。", "success");
+    });
+
+    document.getElementById("btnViewUpdateLog").addEventListener("click", async () => {
+      try {
+        const resp = await fetch("/api/update-log?limit=20");
+        const data = await resp.json();
+        if (!resp.ok) {
+          showToast("读取更新日志失败", data.error || resp.statusText, "error");
+          return;
+        }
+        const entries = data.entries || [];
+        if (!entries.length) {
+          showToast("更新日志", "最近没有更新记录。", "success");
+          return;
+        }
+        const latest = entries[entries.length - 1];
+        const msg = `最近一条：${latest.timestamp} · ${latest.status} · ${latest.message}`;
+        showToast("更新日志（最近）", msg, "success", 5000);
+      } catch (err) {
+        showToast("读取更新日志异常", String(err), "error");
+      }
+    });
+
+    // 顶部导航切换功能区域
+    const nav = document.getElementById("topNav");
+    const sections = {
+      "section-predict": document.getElementById("section-predict"),
+      "section-update": document.getElementById("section-update"),
+      "section-tasks": document.getElementById("section-tasks"),
+      "section-realtime": document.getElementById("section-realtime")
+    };
+    nav.addEventListener("click", (e) => {
+      const btn = e.target.closest(".nav-item");
+      if (!btn) return;
+      const target = btn.getAttribute("data-target");
+      if (!target || !sections[target]) return;
+
+      // 激活按钮样式
+      for (const b of nav.querySelectorAll(".nav-item")) {
+        b.classList.toggle("active", b === btn);
+      }
+      // 显示对应区域
+      for (const [id, el] of Object.entries(sections)) {
+        el.style.display = id === target ? "" : "none";
+      }
+      
+      // 如果切换到实时监控，检查状态并开始轮询
+      if (target === "section-realtime") {
+        checkRealtimeStatus();
+        // 初始化图表（如果还没有）
+        if (!realtimeChart) {
+          initRealtimeChart();
+        }
+        // 立即刷新一次数据
+        refreshRealtimeData();
+        if (!realtimePollInterval) {
+          startRealtimePolling();
+        }
+      } else {
+        // 离开实时监控页面时停止轮询（可选）
+        // stopRealtimePolling();
+      }
+    });
+
+    // ========== 实时监控功能 ==========
+    let realtimeChart = null;
+    let realtimePollInterval = null;
+    const REALTIME_POLL_INTERVAL = 2000; // 2秒轮询一次
+
+    function colorForLoadLevel(level) {
+      const palette = {
+        0: "#4caf50",  // 低
+        1: "#8bc34a",
+        2: "#ffc107",
+        3: "#ff9800",
+        4: "#f44336",  // 高
+        5: "#9c27b0",
+      };
+      return palette[level] || "#9e9e9e";
+    }
+
+    function initRealtimeChart() {
+      const ctx = document.getElementById("realtimeChart");
+      if (!ctx) return;
+
+      if (realtimeChart) {
+        realtimeChart.destroy();
+      }
+
+      realtimeChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: [],
+          datasets: [{
+            label: "认知负荷等级",
+            data: [],
+            backgroundColor: [],
+            borderColor: [],
+            borderWidth: 1,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false,
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const idx = context.dataIndex;
+                  const record = realtimeChart.data.records?.[idx];
+                  if (record) {
+                    return `Level ${record.relative_load_level} - ${record.relative_load_label}`;
+                  }
+                  return `Level ${context.parsed.y}`;
+                },
+              },
+            },
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 5,
+              ticks: {
+                stepSize: 1,
+                color: "#9ca3af",
+              },
+              grid: {
+                color: "#1f2937",
+              },
+            },
+            x: {
+              ticks: {
+                color: "#9ca3af",
+                maxRotation: 60,
+                minRotation: 60,
+                font: {
+                  size: 10,
+                },
+              },
+              grid: {
+                display: false,
+              },
+            },
+          },
+        },
+      });
+    }
+
+    async function checkRealtimeStatus() {
+      const statusEl = document.getElementById("realtimeStatus");
+      const btnStart = document.getElementById("btnStartRealtime");
+      const btnStop = document.getElementById("btnStopRealtime");
+
+      try {
+        const resp = await fetch("/api/realtime-monitor/status");
+        const data = await resp.json();
+
+        if (data.running) {
+          statusEl.textContent = `监控运行中 - 日志文件: ${data.log_path}`;
+          statusEl.classList.remove("error");
+          statusEl.classList.add("success");
+          btnStart.disabled = true;
+          btnStop.disabled = false;
+        } else {
+          statusEl.textContent = "监控未运行";
+          statusEl.classList.remove("error", "success");
+          btnStart.disabled = false;
+          btnStop.disabled = true;
+        }
+      } catch (err) {
+        statusEl.textContent = `检查状态失败: ${err}`;
+        statusEl.classList.add("error");
+      }
+    }
+
+    async function startRealtimeMonitor() {
+      const watchDirsInput = document.getElementById("realtimeWatchDirs");
+      const intervalInput = document.getElementById("realtimeInterval");
+      const statusEl = document.getElementById("realtimeStatus");
+      const btnStart = document.getElementById("btnStartRealtime");
+
+      const watchDirsText = (watchDirsInput.value || "").trim();
+      const watchDirs = watchDirsText
+        ? watchDirsText.split("\n").map(s => s.trim()).filter(s => s)
+        : ["Cognitive/data/cognitive_study", "data"];
+      const interval = parseInt(intervalInput.value) || 10;
+
+      setButtonLoading(btnStart, true, "正在启动...");
+
+      try {
+        const resp = await fetch("/api/realtime-monitor/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            watch_dirs: watchDirs,
+            interval: interval,
+          }),
+        });
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          statusEl.textContent = `启动失败: ${data.error || resp.statusText}`;
+          statusEl.classList.add("error");
+          showToast("启动监控失败", data.error || resp.statusText, "error");
+        } else {
+          statusEl.textContent = `监控已启动 - PID: ${data.pid}, 监控目录: ${data.watch_dirs.join(", ")}, 间隔: ${data.interval}秒`;
+          statusEl.classList.remove("error");
+          statusEl.classList.add("success");
+          document.getElementById("btnStartRealtime").disabled = true;
+          document.getElementById("btnStopRealtime").disabled = false;
+          document.getElementById("realtimeContent").style.display = "block";
+          showToast("监控已启动", `PID: ${data.pid}`, "success");
+          
+          // 立即刷新一次数据
+          refreshRealtimeData();
+        }
+      } catch (err) {
+        statusEl.textContent = `启动异常: ${err}`;
+        statusEl.classList.add("error");
+        showToast("启动监控异常", String(err), "error");
+      } finally {
+        setButtonLoading(btnStart, false);
+      }
+    }
+
+    async function stopRealtimeMonitor() {
+      const statusEl = document.getElementById("realtimeStatus");
+      const btnStop = document.getElementById("btnStopRealtime");
+
+      setButtonLoading(btnStop, true, "正在停止...");
+
+      try {
+        const resp = await fetch("/api/realtime-monitor/stop", {
+          method: "POST",
+        });
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          statusEl.textContent = `停止失败: ${data.error || resp.statusText}`;
+          statusEl.classList.add("error");
+          showToast("停止监控失败", data.error || resp.statusText, "error");
+        } else {
+          statusEl.textContent = "监控已停止";
+          statusEl.classList.remove("error", "success");
+          document.getElementById("btnStartRealtime").disabled = false;
+          document.getElementById("btnStopRealtime").disabled = true;
+          showToast("监控已停止", "", "success");
+        }
+      } catch (err) {
+        statusEl.textContent = `停止异常: ${err}`;
+        statusEl.classList.add("error");
+        showToast("停止监控异常", String(err), "error");
+      } finally {
+        setButtonLoading(btnStop, false);
+      }
+    }
+
+    async function refreshRealtimeData() {
+      try {
+        const resp = await fetch("/api/realtime-predictions?limit=50");
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          console.error("获取实时数据失败:", data.error);
+          return;
+        }
+
+        const records = data.records || [];
+        updateRealtimeChart(records);
+        updateRealtimeTable(records);
+      } catch (err) {
+        console.error("刷新实时数据异常:", err);
+      }
+    }
+
+    function updateRealtimeChart(records) {
+      if (!realtimeChart) {
+        initRealtimeChart();
+      }
+      if (!realtimeChart) return;
+
+      const maxPoints = 40;
+      const recentRecords = records.slice(-maxPoints);
+
+      const labels = recentRecords.map(r => {
+        const sessionName = r.session_dir.split(/[/\\]/).pop() || r.session_dir;
+        return `${sessionName}#${r.task_id}`;
+      });
+      const levels = recentRecords.map(r => r.relative_load_level);
+      const colors = levels.map(lvl => colorForLoadLevel(lvl));
+
+      realtimeChart.data.labels = labels;
+      realtimeChart.data.datasets[0].data = levels;
+      realtimeChart.data.datasets[0].backgroundColor = colors;
+      realtimeChart.data.datasets[0].borderColor = colors;
+      realtimeChart.data.records = recentRecords;
+      realtimeChart.update("none");
+    }
+
+    function updateRealtimeTable(records) {
+      const tbody = document.getElementById("realtimeTableBody");
+      if (!tbody) return;
+
+      tbody.innerHTML = "";
+
+      // 反转顺序，最新的在前
+      const reversed = [...records].reverse();
+
+      for (const r of reversed) {
+        const sessionName = r.session_dir.split(/[/\\]/).pop() || r.session_dir;
+        const level = r.relative_load_level;
+        const label = r.relative_load_label;
+        const coords = r.coordinates_2d || [0, 0];
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td style="font-size:11px; color:#6b7280;">${new Date().toLocaleTimeString()}</td>
+          <td style="font-family:monospace; font-size:11px;">${sessionName}</td>
+          <td>${r.task_id}</td>
+          <td><span class="pill pill-cluster">${r.predicted_cluster}</span></td>
+          <td><span class="pill ${level <= 1 ? 'pill-low' : level <= 3 ? 'pill-mid' : 'pill-high'}">Level ${level}</span></td>
+          <td>${label}</td>
+          <td style="font-family:monospace; font-size:11px;">(${coords[0].toFixed(3)}, ${coords[1].toFixed(3)})</td>
+        `;
+        tbody.appendChild(row);
+      }
+    }
+
+    function startRealtimePolling() {
+      if (realtimePollInterval) {
+        return;
+      }
+      realtimePollInterval = setInterval(() => {
+        const realtimeSection = document.getElementById("section-realtime");
+        if (realtimeSection && realtimeSection.style.display !== "none") {
+          refreshRealtimeData();
+        }
+      }, REALTIME_POLL_INTERVAL);
+    }
+
+    function stopRealtimePolling() {
+      if (realtimePollInterval) {
+        clearInterval(realtimePollInterval);
+        realtimePollInterval = null;
+      }
+    }
+
+    // 实时监控事件绑定
+    document.getElementById("btnStartRealtime")?.addEventListener("click", startRealtimeMonitor);
+    document.getElementById("btnStopRealtime")?.addEventListener("click", stopRealtimeMonitor);
+    document.getElementById("btnRefreshRealtime")?.addEventListener("click", refreshRealtimeData);
+
+    // 初始化时检查状态
+    checkRealtimeStatus();
+    
+    // 页面卸载时清理
+    window.addEventListener("beforeunload", () => {
+      stopRealtimePolling();
+    });
+  </script>
+</body>
+</html>
+
