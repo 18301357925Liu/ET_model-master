@@ -16,3 +16,6 @@ data/
 !outputs/
 !outputs/cluster_load_mapping.csv
 !outputs/cluster_load_summary.csv
+
+# Environment variables — NEVER commit real keys
+.env
